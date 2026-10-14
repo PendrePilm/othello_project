@@ -88,8 +88,46 @@ class OthelloGame :
                     coups.append((l, c))
         return coups
 
+    def jouer_coup(self, l, c, joueur, plateau=None):
+        if plateau is None:
+            plateau = self.plateau
+
+        pions_a_retourner = self.obtenir_pions_a_retourner(l, c, joueur, plateau)
+
+       # Si le coup n'est pas valide (aucun pions capturés), on refuse le coup
+        if not pions_a_retourner:
+            return False
+
+        # Place le pion du joueur
+        plateau[l][c] = joueur
+
+        # Retourne les pions encadrés
+        for rl, rc in pions_a_retourner:
+            plateau[rl][rc] = joueur
+        return True
+
+    def changer_joueur(self):
+        # Donne la main au joueur suivant
+        self.joueur_actif = -self.joueur_actif
+
+    def est_termine(self, plateau=None):
+        if plateau is None:
+            plateau = self.plateau
+        # Le jeu est terminé si aucun joueur ne peut jouer
+        coups_noir = self.obtenir_coups_valides(NOIR, plateau)
+        coups_blanc = self.obtenir_coups_valides(BLANC, plateau)
+        return len(coups_noir) == 0 and len(coups_blanc) == 0
+
+
 
 if __name__ == "__main__":
     jeu = OthelloGame()
     coups_noir = jeu.obtenir_coups_valides(NOIR)
-    print ("Au debut du jeu, le joueur noir peut jouer :", coups_noir)
+
+    #Jouer le premier coups legitime de NOIR en (2,3)
+    succes = jeu.jouer_coup(2, 3, NOIR)
+    if succes:
+        jeu.changer_joueur()
+        print("Coup joué par Noir en (2,3)")
+        print("Nouveau score :", jeu.calculer_score())
+        print("Prochain joueur:", "Blanc" if jeu.joueur_actif == BLANC else "Noir")
