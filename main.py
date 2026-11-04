@@ -1,6 +1,7 @@
 import sys
 import pygame
 from game import BLANC, NOIR, VIDE, OthelloGame
+from ai import OthelloAI
 
 # Initialisation de Pygame
 pygame.init()
@@ -63,6 +64,7 @@ def dessiner_plateau(jeu):
 
 def principal():
     jeu = OthelloGame()
+    ia = OthelloAI(strategie="mixte", profondeur_max=3)
     horloge = pygame.time.Clock()
     en_cours = True
 
@@ -70,22 +72,33 @@ def principal():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 en_cours = False
-                
+
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                pos_x, pos_y = event.pos
-                
-                # Clic sur le plateau (sous le bandeau)
-                if pos_y >= HAUTEUR_BANDEAU:
-                    colonne = pos_x // TAILLE_CASE
-                    ligne = (pos_y - HAUTEUR_BANDEAU) // TAILLE_CASE
-                    
-                    if jeu.est_coup_valide(ligne, colonne, jeu.joueur_actif):
-                        jeu.jouer_coup(ligne, colonne, jeu.joueur_actif)
-                        jeu.changer_joueur()
-                        
-                        # Si l'adversaire n'a aucun coup, on repasse la main
-                        if not jeu.obtenir_coups_valides(jeu.joueur_actif):
+                if jeu.joueur_actif == NOIR:
+                    pos_x, pos_y = event.pos
+                    if pos_y >= HAUTEUR_BANDEAU:
+                        colonne = pos_x // TAILLE_CASE
+                        ligne = (pos_y - HAUTEUR_BANDEAU) // TAILLE_CASE
+
+                        if jeu.est_coup_valide(ligne, colonne, NOIR):
+                            jeu.jouer_coup(ligne, colonne, NOIR)
                             jeu.changer_joueur()
+
+        # Tour de l'IA (Joueur BLANC)
+        if jeu.joueur_actif == BLANC and not jeu.est_termine():
+            dessiner_plateau(jeu)
+            dessiner_bandeau(jeu)
+            pygame.display.flip()
+            pygame.time.wait(300)  # Délai court pour simuler la réflexion
+
+            coup = ia.obtenir_meilleur_coup(jeu, BLANC)
+            if coup:
+                jeu.jouer_coup(coup[0], coup[1], BLANC)
+            jeu.changer_joueur()
+
+        # Gestion des cas où un joueur doit passer son tour
+        if not jeu.obtenir_coups_valides(jeu.joueur_actif) and not jeu.est_termine():
+            jeu.changer_joueur()
 
         dessiner_plateau(jeu)
         dessiner_bandeau(jeu)
